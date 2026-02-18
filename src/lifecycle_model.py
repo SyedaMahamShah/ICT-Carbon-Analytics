@@ -1,6 +1,5 @@
 import pandas as pd
 
-# Device baseline values derived from thesis findings
 DEVICE_DATA = {
     "smartphone": {
         "production": 70,
@@ -27,43 +26,39 @@ ELECTRICITY_FACTORS = {
     "france": 0.05
 }
 
-def lifecycle_emissions(device_type, country, lifetime_override=None):
-    device = DEVICE_DATA[device_type].copy()
-    grid_factor = ELECTRICITY_FACTORS[country]
+def lifecycle_emissions(device, country, lifetime_override=None):
 
-    # If user wants to override lifetime
+    device_data = DEVICE_DATA[device].copy()
+    grid = ELECTRICITY_FACTORS[country]
+
     if lifetime_override is not None:
-        device["lifetime_years"] = lifetime_override
+        device_data["lifetime_years"] = lifetime_override
 
     use_phase = (
-        device["annual_use_kwh"] *
-        grid_factor *
-        device["lifetime_years"]
+        device_data["annual_use_kwh"] *
+        grid *
+        device_data["lifetime_years"]
     )
 
     total = (
-        device["production"] +
+        device_data["production"] +
         use_phase +
-        device["eol"]
+        device_data["eol"]
     )
 
     return {
-        "Production": device["production"],
+        "Production": device_data["production"],
         "Use Phase": use_phase,
-        "End of Life": device["eol"],
+        "End of Life": device_data["eol"],
         "Total": total
     }
 
 def data_center_operational_emissions(it_energy_kwh, pue, country):
-    """
-    Calculate operational emissions of a data center
-    including infrastructure overhead using PUE.
-    """
 
     total_energy = it_energy_kwh * pue
-    grid_factor = ELECTRICITY_FACTORS[country]
+    grid = ELECTRICITY_FACTORS[country]
 
-    emissions = total_energy * grid_factor
+    emissions = total_energy * grid
 
     return {
         "IT Energy (kWh)": it_energy_kwh,
@@ -71,45 +66,17 @@ def data_center_operational_emissions(it_energy_kwh, pue, country):
         "Operational Emissions (kg CO2e)": emissions
     }
 
-def get_device_data():
-    data = {
-        "device": ["smartphone", "laptop", "server"],
-        "production_kg": [70, 250, 2000],
-        "annual_use_kwh": [5, 50, 3000],
-        "lifetime_years": [3, 4, 4],
-        "eol_kg": [5, 15, 100]
-    }
-    return pd.DataFrame(data)
-
-def calculate_lifecycle(device, country):
-    df = get_device_data()
-    row = df[df["device"] == device].iloc[0]
-
-    electricity_factors = {
-        "finland": 0.10,
-        "france": 0.05
-    }
-
-    use_phase = (
-        row["annual_use_kwh"] *
-        electricity_factors[country] *
-        row["lifetime_years"]
-    )
-
-    total = row["production_kg"] + use_phase + row["eol_kg"]
-
-    return {
-        "Production": row["production_kg"],
-        "Use Phase": use_phase,
-        "End of Life": row["eol_kg"],
-        "Total": total
-    }
-
 def lifetime_sensitivity(device, country, min_year=2, max_year=8):
+
     results = []
+
     for year in range(min_year, max_year + 1):
-        result = calculate_lifecycle(device, country)
+        result = lifecycle_emissions(device, country, lifetime_override=year)
         result["Lifetime"] = year
         results.append(result)
 
     return pd.DataFrame(results)
+
+
+if __name__ == "__main__":
+    print(lifecycle_emissions("laptop", "finland"))
