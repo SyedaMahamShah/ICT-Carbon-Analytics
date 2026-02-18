@@ -27,9 +27,13 @@ ELECTRICITY_FACTORS = {
     "france": 0.05
 }
 
-def lifecycle_emissions(device_type, country):
-    device = DEVICE_DATA[device_type]
+def lifecycle_emissions(device_type, country, lifetime_override=None):
+    device = DEVICE_DATA[device_type].copy()
     grid_factor = ELECTRICITY_FACTORS[country]
+
+    # If user wants to override lifetime
+    if lifetime_override is not None:
+        device["lifetime_years"] = lifetime_override
 
     use_phase = (
         device["annual_use_kwh"] *
