@@ -53,3 +53,20 @@ def lifecycle_emissions(device_type, country, lifetime_override=None):
         "End of Life": device["eol"],
         "Total": total
     }
+
+def data_center_operational_emissions(it_energy_kwh, pue, country):
+    """
+    Calculate operational emissions of a data center
+    including infrastructure overhead using PUE.
+    """
+
+    total_energy = it_energy_kwh * pue
+    grid_factor = ELECTRICITY_FACTORS[country]
+
+    emissions = total_energy * grid_factor
+
+    return {
+        "IT Energy (kWh)": it_energy_kwh,
+        "Total Facility Energy (kWh)": total_energy,
+        "Operational Emissions (kg CO2e)": emissions
+    }
